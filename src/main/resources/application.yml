@@ -14,3 +14,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
     password:
+
+  sql:
+    init:
+      mode: always

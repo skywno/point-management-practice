@@ -1,0 +1,20 @@
+spring:
+  batch:
+    job:
+      names: ${job.name:NONE} # spring.batch.job.names를 job.name으로 치환
+      enabled: false
+    jdbc:
+      initialize-schema: always
+
+  jpa:
+    show-sql: true # sql 로그로 남기기를 true로 변경
+    hibernate:
+      ddl-auto: create-drop # entity를 보고 자동으로 데이터베이스 생성 여부를 validate (생성은 안하고 검증만)로 변경
+
+  datasource:
+    url: jdbc:mysql://localhost:3366/pointtest
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password:
+
+logging.level.me.ezra.pm: DEBUG

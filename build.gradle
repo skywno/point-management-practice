@@ -25,11 +25,14 @@ dependencies {
     runtimeOnly 'com.mysql:mysql-connector-j'
     // The querydsl-jpa library is the Querydsl itself, designed to be used together with a JPA application.
     implementation 'com.querydsl:querydsl-jpa'
-    // Annotation processing tool (APT) allows processing of annotations in source files before they move on to the compilation stage.
-    // This tool generates the so called Q-types
-    implementation 'com.querydsl:querydsl-apt'
     implementation 'com.querydsl:querydsl-core'
 
+    // Annotation processing tool (APT) allows processing of annotations in source files before they move on to the compilation stage.
+    // This tool generates the so called Q-types
+    annotationProcessor 'com.querydsl:querydsl-apt'
+    annotationProcessor group: 'com.querydsl', name: 'querydsl-apt', classifier: 'jpa'
+    annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
+    annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
 
 
     annotationProcessor 'org.projectlombok:lombok'

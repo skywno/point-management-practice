@@ -1,5 +1,7 @@
 package me.ezra.pm.job.expire;
 
+import me.ezra.pm.job.reader.ReverseJpaPagingItemReader;
+import me.ezra.pm.job.reader.ReverseJpaPagingItemReaderBuilder;
 import me.ezra.pm.point.Point;
 import me.ezra.pm.point.PointRepository;
 import me.ezra.pm.point.wallet.PointWallet;
@@ -15,6 +17,7 @@ import org.springframework.batch.item.database.builder.JpaPagingItemReaderBuilde
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.domain.Sort;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.persistence.EntityManagerFactory;
@@ -29,7 +32,7 @@ public class ExpirePointStepConfiguration {
     public Step expirePointStep(
             StepBuilderFactory stepBuilderFactory,
             PlatformTransactionManager transactionManager,
-            JpaPagingItemReader<Point> expirePointItemReader,
+            ReverseJpaPagingItemReader<Point> expirePointItemReader,
             ItemProcessor<Point, Point> expirePointItemProcessor,
             ItemWriter<Point> expirePointItemWriter
     ) {
@@ -46,17 +49,17 @@ public class ExpirePointStepConfiguration {
 
     @Bean
     @StepScope
-    public JpaPagingItemReader<Point> expirePointItemReader(
-            EntityManagerFactory entityManagerFactory,
+    public ReverseJpaPagingItemReader<Point> expirePointItemReader(
+            PointRepository pointRepository,
             @Value("#{T(java.time.LocalDate).parse(jobParameters[today])}") LocalDate today // JobParameter 를 가져와서 LocalDate 로 converting 함
     ) {
-        return new JpaPagingItemReaderBuilder<Point>()
-                .name("expirePointItemReader")
-                .entityManagerFactory(entityManagerFactory)
-                .queryString("select p from Point p where p.expireDate < :today and " +
-                        "used = false and expired = false") //JPQL 쿼리로 작성
-                .parameterValues(Map.of("today", today)) // :today 에 파라미터 값을 넣어줌
-                .pageSize(1000)
+        return new ReverseJpaPagingItemReaderBuilder<Point>()
+                .name("ExpirePointItemReader")
+                .query(
+                        pageable -> pointRepository.findPointToExpire(today, pageable)
+                )
+                .sort(Sort.by(Sort.Direction.ASC, "id"))
+                .pageSize(1)
                 .build();
 
     }

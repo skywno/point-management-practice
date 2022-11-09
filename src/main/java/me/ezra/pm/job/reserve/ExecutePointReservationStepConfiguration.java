@@ -1,6 +1,8 @@
 package me.ezra.pm.job.reserve;
 
 import com.mysema.commons.lang.Pair;
+import me.ezra.pm.job.reader.ReverseJpaPagingItemReader;
+import me.ezra.pm.job.reader.ReverseJpaPagingItemReaderBuilder;
 import me.ezra.pm.point.Point;
 import me.ezra.pm.point.PointRepository;
 import me.ezra.pm.point.reservation.PointReservation;
@@ -13,16 +15,12 @@ import org.springframework.batch.core.configuration.annotation.StepBuilderFactor
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemWriter;
-import org.springframework.batch.item.database.JpaPagingItemReader;
-import org.springframework.batch.item.database.builder.JpaPagingItemReaderBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import javax.persistence.EntityManagerFactory;
 import java.time.LocalDate;
-import java.util.Map;
 
 @Configuration
 public class ExecutePointReservationStepConfiguration {
@@ -32,7 +30,7 @@ public class ExecutePointReservationStepConfiguration {
     public Step executePointReservationStep(
             StepBuilderFactory stepBuilderFactory,
             PlatformTransactionManager transactionManager,
-            JpaPagingItemReader<PointReservation> executePointReservationItemReader,
+            ReverseJpaPagingItemReader<PointReservation> executePointReservationItemReader,
             ItemProcessor<PointReservation, Pair<PointReservation, Point>> executePointReservationItemProcessor,
             ItemWriter<Pair<PointReservation, Point>> executePointReservationItemWriter
     ) {
@@ -48,18 +46,15 @@ public class ExecutePointReservationStepConfiguration {
 
     @Bean
     @StepScope
-    public JpaPagingItemReader<PointReservation> executePointReservationItemReader(
-            EntityManagerFactory entityManagerFactory,
+    public ReverseJpaPagingItemReader<PointReservation> executePointReservationItemReader(
+            PointReservationRepository pointReservationRepository ,
             @Value("#{T(java.time.LocalDate).parse(jobParameters[today])}")
             LocalDate today
     ) {
-        return new JpaPagingItemReaderBuilder<PointReservation>()
+        return new ReverseJpaPagingItemReaderBuilder<PointReservation>()
                 .name("executePointReservationItemReader")
-                .entityManagerFactory(entityManagerFactory)
-                .queryString("select pr from PointReservation pr where pr.earnedDate " +
-                        "<= :today and pr.executed = false")
-                .parameterValues(Map.of("today", today))
-                .pageSize(1000)
+                .query(pageable -> pointReservationRepository.findPointReservationToExecute(today, pageable))
+                .pageSize(1)
                 .build();
     }
 
